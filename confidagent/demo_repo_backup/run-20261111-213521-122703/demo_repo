@@ -1,0 +1,152 @@
+Replace demo_repo/app.py with this exact content - a real Flask API with real bugs:
+
+"""
+Flask REST API - User Authentication Service
+Real bugs hidden in this file for ConfidAgent demo
+"""
+from flask import Flask, request, jsonify
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from auth import authenticate_user, create_token
+from database import get_db
+
+# BUG 1: Old flask-limiter initialization (deprecated in v2.0)
+# Should be: limiter = Limiter(get_remote_address, app=app)
+app = Flask(__name__)
+limiter = Limiter(app, key_func=get_remote_address)
+
+@app.route('/api/login', methods=['POST'])
+@limiter.limit("100/day")
+def login():
+    """Authenticate user and return JWT token"""
+    data = request.get_json()
+    
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    username = data.get('username', '')
+    password = data.get('password', '')
+    
+    if not username or not password:
+        return jsonify({'error': 'Username and password required'}), 400
+    
+    user = authenticate_user(username, password)
+    
+    if user:
+        token = create_token(user['id'])
+        return jsonify({'token': token, 'user_id': user['id']}), 200
+    
+    return jsonify({'error': 'Invalid credentials'}), 401
+
+@app.route('/api/users', methods=['GET'])
+@limiter.limit("50/hour")
+def get_users():
+    """Get all users - admin only"""
+    db = get_db()
+    users = db.users.find({}, {'password': 0})
+    return jsonify({'users': list(users)}), 200
+
+@app.route('/api/health', methods=['GET'])
+def health():
+    return jsonify({'status': 'ok'}), 200
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)
+
+---
+
+Replace demo_repo/auth.py with this exact content:
+
+"""
+Authentication module
+Real security bugs hidden here for ConfidAgent demo
+"""
+import hashlib
+import jwt
+import datetime
+from database import get_db
+
+# BUG 2: MD5 is cryptographically broken for passwords
+# Should use: bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+def hash_password(password: str) -> str:
+    return hashlib.md5(password.encode()).hexdigest()
+
+def authenticate_user(username: str, password: str) -> dict:
+    """Verify username and password against database"""
+    db = get_db()
+    
+    # BUG 3: No input sanitization before query
+    # Should validate username format before querying
+    user = db.users.find_one({'username': username})
+    
+    if user and user['password'] == hash_password(password):
+        return {'id': str(user['_id']), 'username': username}
+    
+    return None
+
+# BUG 4: JWT token with no expiration
+# Should include: 'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+def create_token(user_id: str) -> str:
+    SECRET_KEY = 'my-secret-key-123'
+    payload = {
+        'user_id': user_id,
+        'iat': datetime.datetime.utcnow()
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm='HS256')
+
+def verify_token(token: str) -> dict:
+    SECRET_KEY = 'my-secret-key-123'
+    try:
+        return jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+    except jwt.InvalidTokenError:
+        return None
+
+---
+
+Replace demo_repo/database.py with this exact content:
+
+"""
+Database connection module
+Real bugs hidden here for ConfidAgent demo
+"""
+import pymongo
+
+# BUG 5: Old pymongo connection without ServerAPI
+# Current best practice:
+# from pymongo.server_api import ServerApi
+# client = MongoClient(uri, server_api=ServerApi('1'))
+#
+# BUG 6: No connection timeout
+# Should add: serverSelectionTimeoutMS=5000
+# BUG 7: No error handling
+
+_client = None
+_db = None
+
+def get_client():
+    global _client
+    if _client is None:
+        _client = pymongo.MongoClient("mongodb://localhost:27017/")
+    return _client
+
+def get_db():
+    global _db
+    if _db is None:
+        client = get_client()
+        _db = client['userauth']
+    return _db
+
+def close_connection():
+    global _client
+    if _client:
+        _client.close()
+        _client = None
+
+---
+
+Replace demo_repo/requirements.txt with:
+flask==2.3.0
+flask-limiter==1.5.0
+pymongo==3.12.0
+PyJWT==2.8.0
+bcrypt==4.0.1

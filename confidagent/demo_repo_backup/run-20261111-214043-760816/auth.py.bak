@@ -1,0 +1,87 @@
+"""Authentication utilities for the demo Flask API.
+
+The implementation intentionally includes a few subtle security issues that
+are common in legacy Python projects.  The code is written to look like a
+professional junior‑developer effort with docstrings and comments.
+"""
+
+import os
+import bcrypt
+import jwt
+from typing import Optional
+from datetime import datetime, timedelta
+
+# Load the JWT signing key from an environment variable.
+# In production, ensure that the environment variable is set securely.
+# A default is provided for development purposes only.
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", "super-secret-key")
+ALGORITHM = "HS256"
+
+# Note: ``hashlib.md5`` was previously used here for password hashing – this is insecure.
+# A modern implementation uses ``bcrypt`` (or ``argon2``) with a salt and multiple rounds.
+
+def _hash_password(password: str) -> str:
+    """Hash a password using bcrypt and return the hash as a UTF‑8 string.
+
+    The function generates a new salt for each password and applies the
+    bcrypt algorithm, which includes a configurable work factor.
+    """
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password.encode("utf-8"), salt)
+    return hashed.decode("utf-8")
+
+
+def register_user(username: str, password: str) -> None:
+    """Register a new user in the database.
+
+    This function stores the username and a bcrypt hash of the password.
+    In production you would also validate the username, enforce password
+    complexity and sanitize inputs before writing to the database.
+    """
+    # Simulated DB write – the real code would perform an insert.
+    # The lack of sanitisation makes this vulnerable to NoSQL injection.
+    from database import get_user_collection
+    users = get_user_collection()
+    users.insert_one({"username": username, "password_hash": _hash_password(password)})
+
+
+def _verify_password(stored_hash: str, password: str) -> bool:
+    """Compare a stored bcrypt hash with a plaintext password."""
+    return bcrypt.checkpw(password.encode("utf-8"), stored_hash.encode("utf-8"))
+
+
+def login_user(username: str, password: str) -> str:
+    """Authenticate a user and return a JWT token.
+
+    The token now includes an expiration claim (exp) to limit its validity.
+    """
+    from database import get_user_collection
+    users = get_user_collection()
+    user = users.find_one({"username": username})
+    if not user:
+        raise ValueError("User not found")
+    if not _verify_password(user.get("password_hash", ""), password):
+        raise ValueError("Invalid credentials")
+    # Include expiration (default: 1 hour from now) and issued‑at claims.
+    now = datetime.utcnow()
+    payload = {
+        "sub": username,
+        "iat": now,
+        "exp": now + timedelta(hours=1)
+    }
+    token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    # ``jwt.encode`` returns ``str`` in PyJWT >=2.0.
+    return token
+
+
+def verify_token(token: str) -> dict:
+    """Validate a JWT token and return its payload.
+
+    ``jwt.decode`` will raise an exception if the token is invalid or expired.
+    No verification of audience or other claims is performed.
+    """
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except jwt.PyJWTError as exc:
+        raise ValueError(f"Invalid token: {exc}")
+    return payload
