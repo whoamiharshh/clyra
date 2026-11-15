@@ -23,7 +23,7 @@ Reads only relevant files, verifies dependency versions via Tavily, scores each 
 - Budget hard-stop: never exceeds your set limit
 
 Measured: 66% token savings (9,478 naive → 3,190 actual), $0.0032 per task.
-
+98% token reduction (illustative estimate, not independently verified)
 ## How It Catches Stale Answers (PS06)
 
 Before the agent writes any code, Tavily verifies every pinned dependency in requirements.txt. In our demo run, it caught flask-limiter 1.5.0 and pymongo 3.12.0 as stale — both break on current Python 3.13.
