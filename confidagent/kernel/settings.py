@@ -36,7 +36,7 @@ class AppSettings:
     tavily_api_key: str = ""
     model_cheap: str = "openai/gpt-oss-20b"
     model_powerful: str = "openai/gpt-oss-120b"
-    model_local: str = "qwen2.5-coder:3b"
+    model_local: str = "llama3.2:3b"
     budget_usd: float = 2.00
     cache_threshold: float = 0.90
     cache_ttl_seconds: int = 3600

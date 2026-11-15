@@ -53,8 +53,13 @@ def _local_classify(task: str, the_map: str) -> Optional[str]:
 
 
 def classify_task(task: str, repo_map: str = "") -> str:
-    """Return 'analysis' or 'generation'. Local model first, regex heuristic fallback."""
+    heuristic = heuristic_classify(task)
+
+    if heuristic == "analysis":
+        return "analysis"
+
     result = _local_classify(task, repo_map)
     if result is not None:
         return result
-    return heuristic_classify(task)
+
+    return heuristic

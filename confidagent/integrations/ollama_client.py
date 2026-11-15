@@ -8,8 +8,9 @@ class OllamaClient:
     
     def __init__(self):
         self.base_url = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434/v1')
-        self.model = os.getenv('OLLAMA_MODEL', 'qwen2.5-coder:3b')
+        self.model = os.getenv('OLLAMA_MODEL','llama3.2:3b')
         self.client = make_openai_client(
+    
             base_url=self.base_url,
             api_key='ollama'
         )
@@ -49,4 +50,4 @@ class OllamaClient:
     def get_status(self) -> str:
         if self.is_available():
             return f"AVAILABLE ({self.model})"
-        return "UNAVAILABLE - run: ollama serve && ollama pull qwen2.5-coder:3b"
+        return "UNAVAILABLE - run: ollama serve && ollama pull llama3.2:3b"

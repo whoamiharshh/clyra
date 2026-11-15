@@ -2,3 +2,13 @@
 __pycache__/
 *.pyc
 .confidagent_state.json
+.env.*
+!.env.example
+.confidagent/
+*.db
+*.log
+*.coverage
+*.bak
+* (2).*
+demo_repo_backup/
+demo_repo_original/

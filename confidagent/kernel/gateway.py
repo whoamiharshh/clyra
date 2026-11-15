@@ -238,7 +238,7 @@ class Gateway:
         except openai.APIConnectionError as exc:
             raise LocalModelUnavailable(
                 "Cannot reach Ollama. Start it with: ollama serve "
-                "then: ollama pull qwen2.5-coder:3b"
+                "then: ollama pull llama3.2:3b"
             ) from exc
         except openai.RateLimitError as exc:
             raise GatewayError(f"Ollama rate limited: {exc}") from exc
