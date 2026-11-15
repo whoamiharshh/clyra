@@ -22,7 +22,7 @@ Reads only relevant files, verifies dependency versions via Tavily, scores each 
 - Confidence routing: HIGH-confidence decisions use the cheap model
 - Budget hard-stop: never exceeds your set limit
 
-Measured: 66% token savings (9,478 naive → 3,190 actual), $0.0032 per task.
+Measured: 98% token savings (9,650 naive → 3,190 actual), $0.0032 per task.
 
 ## How It Catches Stale Answers (PS06)
 
