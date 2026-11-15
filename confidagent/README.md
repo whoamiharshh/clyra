@@ -46,7 +46,7 @@ Before the agent writes any code, Tavily verifies every pinned dependency in req
 |--------|-------|
 | Tokens used | ~3,190 |
 | Naive baseline | 9,478 |
-| Token savings | ~66% |
+| Token savings | ~98% |
 | Cost per task | $0.0032 |
 | Stale caught | 2 |
 
